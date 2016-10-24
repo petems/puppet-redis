@@ -156,6 +156,19 @@ class redis::params {
       $service_user              = 'redis'
       $ppa_repo                  = undef
       $workdir                   = '/var/lib/redis/'
+
+      case $::operatingsystemmajrelease {
+        '6': {
+          $minimum_version = '2.4.10'
+        }
+        '7': {
+          $minimum_version = '2.8.19'
+        }
+        default: {
+          $minimum_version = '2.4.10'
+        }
+      }
+
     }
 
     'FreeBSD': {

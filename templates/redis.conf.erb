@@ -48,6 +48,7 @@ bind <%= @bind %>
 # Close the connection after a client is idle for N seconds (0 to disable)
 timeout <%= @timeout %>
 
+<%- if scope.lookupvar('redis::redis_version_real') and (scope.function_versioncmp([scope.lookupvar('collectd::collectd_version_real'), '4.9.4']) >= 0) -%>
 # TCP keepalive.
 #
 # If non-zero, use SO_KEEPALIVE to send TCP ACKs to clients in absence
@@ -63,6 +64,7 @@ timeout <%= @timeout %>
 #
 # A reasonable value for this option is 60 seconds.
 tcp-keepalive <%= @tcp_keepalive %>
+<%- end %>
 
 # Set server verbosity to 'debug'
 # it can be one of:
