@@ -11,10 +11,10 @@ RSpec.configure do |c|
   c.formatter = :documentation
 
   c.before :suite do
-    # Install module and dependencies
-    puppet_module_install(:source => proj_root, :module_name => 'redis')
-
     hosts.each do |host|
+      # Install module
+      copy_module_to(host, :source => proj_root, :module_name => 'redis')
+
       if fact('osfamily') == 'Debian'
         # These should be on all Deb-flavor machines by default...
         # But Docker is often more slimline

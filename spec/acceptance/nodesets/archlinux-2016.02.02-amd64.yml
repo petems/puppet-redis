@@ -1,0 +1,11 @@
+HOSTS:
+  archlinux-2016.02.02-amd64:
+    roles:
+      - master
+    platform: archlinux-2016.02.02-amd64
+    box: terrywang/archlinux
+    box_version: 1.0.0
+    hypervisor: vagrant
+CONFIG:
+  log_level: verbose
+  type: aio
