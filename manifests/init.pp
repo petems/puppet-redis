@@ -18,6 +18,9 @@
 # @param [String] auto_aof_rewrite_min_size   Adjust minimum size for auto-aof-rewrite.
 # @param [String] auto_aof_rewrite_percentage   Adjust percentatge for auto-aof-rewrite.
 # @param [String] bind   Configure which IP address to listen on.
+# @param [String] client_output_buffer_limit_normal Set client output buffer limits for normal Redis clients.
+# @param [String] client_output_buffer_limit_slave  Set client output buffer limits for Redis pubsub clients.
+# @param [String] client_output_buffer_limit_pubsub  Set client output buffer limits for Redis slaves.
 # @param [String] config_dir   Directory containing the configuration files.
 # @param [String] config_dir_mode   Adjust mode for directory containing configuration files.
 # @param [String] config_file_orig   The location and name of a config file that provides the source
@@ -35,12 +38,18 @@
 # @param [String] hll_sparse_max_bytes   HyperLogLog sparse representation bytes limit
 # @param [String] hz   Set redis background tasks frequency
 # @param [String] latency_monitor_threshold   Latency monitoring threshold in milliseconds
+# @param [String] list_compress_depth Set the number of quicklist ziplist nodes from *each* side of
+#   the list to *exclude* from compression.
+# @param [String] list_max_ziplist_size Set max number of elements for internal list nodes.
 # @param [String] list_max_ziplist_entries   Set max ziplist entries for lists.
 # @param [String] list_max_ziplist_value   Set max ziplist values for lists.
 # @param [String] log_dir   Specify directory where to write log entries.
 # @param [String] log_dir_mode   Adjust mode for directory containing log files.
 # @param [String] log_file   Specify file where to write log entries.
 # @param [String] log_level   Specify the server verbosity level.
+# @param [String] lua_time_limit   Set max execution time for a Lua script in milliseconds.
+#   Set 0 or negative for unlimited execution time.
+#   Default: 5000
 # @param [String] manage_repo   Enable/disable upstream repository configuration.
 # @param [String] manage_package   Enable/disable management of package
 # @param [String] managed_by_cluster_manager Choose if redis will be managed by a cluster manager such as pacemaker or rgmanager
@@ -58,8 +67,10 @@
 # @param [String] package_name   Upstream package name.
 # @param [String] pid_file   Where to store the pid.
 # @param [String] port   Configure which port to listen on.
+# @param [String] protected_mode If true, only accept connections from loopback & Unix domain sockets.
 # @param [String] ppa_repo   Specify upstream (Ubuntu) PPA entry.
 # @param [String] rdbcompression   Enable/disable compression of string objects using LZF when dumping.
+# @param [String] rdbchecksum Enable/disable RDB checksum. Enabling entails a 10% performance hit when saving and loading RDB files
 # @param [String] repl_backlog_size   The replication backlog size
 # @param [String] repl_backlog_ttl   The number of seconds to elapse before freeing backlog buffer
 # @param [String] repl_disable_tcp_nodelay   Enable/disable TCP_NODELAY on the slave socket after SYNC
@@ -83,18 +94,7 @@
 #   Default: 512
 # @param [String] slave_priority   The priority number for slave promotion by Sentinel
 # @param [String] slave_read_only   You can configure a slave instance to accept writes or not.
-# @param [String] slave_serve_stale_data   When a slave loses its connection with the master, or when the replication
-#   is still in progress, the slave can act in two different ways:
-#   1) if slave-serve-stale-data is set to 'yes' (the default) the slave will
-#      still reply to client requests, possibly with out of date data, or the
-#      data set may just be empty if this is the first synchronization.
-#
-#   2) if slave-serve-stale-data is set to 'no' the slave will reply with
-#      an error "SYNC with master in progress" to all the kind of commands
-#      but to INFO and SLAVEOF.
-#
-#   Default: true
-#
+# @param [String] slave_serve_stale_data Select behaviour for serving data when slave loses its connection with the master
 # @param [String] slaveof   Use slaveof to make a Redis instance a copy of another Redis server.
 # @param [String] slowlog_log_slower_than   Tells Redis what is the execution time, in microseconds, to exceed
 #   in order for the command to get logged.
@@ -142,6 +142,12 @@ class redis (
   $auto_aof_rewrite_min_size     = $::redis::params::auto_aof_rewrite_min_size,
   $auto_aof_rewrite_percentage   = $::redis::params::auto_aof_rewrite_percentage,
   $bind                          = $::redis::params::bind,
+  $client_output_buffer_limit_normal = $::redis::params::client_output_buffer_limit_normal,
+  $client_output_buffer_limit_slave  = $::redis::params::client_output_buffer_limit_slave,
+  $client_output_buffer_limit_pubsub = $::redis::params::client_output_buffer_limit_pubsub,
+  $cluster_migration_barrier     = $::redis::params::cluster_migration_barrier,
+  $cluster_require_full_coverage = $::redis::params::cluster_require_full_coverage,
+  $cluster_slave_validity_factor = $::redis::params::cluster_slave_validity_factor,
   $conf_template                 = $::redis::params::conf_template,
   $config_dir                    = $::redis::params::config_dir,
   $config_dir_mode               = $::redis::params::config_dir_mode,
@@ -159,12 +165,15 @@ class redis (
   $hll_sparse_max_bytes          = $::redis::params::hll_sparse_max_bytes,
   $hz                            = $::redis::params::hz,
   $latency_monitor_threshold     = $::redis::params::latency_monitor_threshold,
+  $list_compress_depth           = $::redis::params::list_compress_depth,
   $list_max_ziplist_entries      = $::redis::params::list_max_ziplist_entries,
+  $list_max_ziplist_size         = $::redis::params::list_max_ziplist_size,
   $list_max_ziplist_value        = $::redis::params::list_max_ziplist_value,
   $log_dir                       = $::redis::params::log_dir,
   $log_dir_mode                  = $::redis::params::log_dir_mode,
   $log_file                      = $::redis::params::log_file,
   $log_level                     = $::redis::params::log_level,
+  $lua_time_limit                = $::redis::params::lua_time_limit,
   $manage_package                = $::redis::params::manage_package,
   $manage_repo                   = $::redis::params::manage_repo,
   $masterauth                    = $::redis::params::masterauth,
@@ -183,10 +192,13 @@ class redis (
   $pid_file                      = $::redis::params::pid_file,
   $port                          = $::redis::params::port,
   $ppa_repo                      = $::redis::params::ppa_repo,
+  $protected_mode                = $::redis::params::protected_mode,
   $rdbcompression                = $::redis::params::rdbcompression,
+  $rdbchecksum                   = $::redis::params::rdbchecksum,
   $repl_backlog_size             = $::redis::params::repl_backlog_size,
   $repl_backlog_ttl              = $::redis::params::repl_backlog_ttl,
   $repl_disable_tcp_nodelay      = $::redis::params::repl_disable_tcp_nodelay,
+  $repl_diskless_sync            = $::redis::params::repl_diskless_sync,
   $repl_ping_slave_period        = $::redis::params::repl_ping_slave_period,
   $repl_timeout                  = $::redis::params::repl_timeout,
   $requirepass                   = $::redis::params::requirepass,
@@ -209,8 +221,10 @@ class redis (
   $slowlog_log_slower_than       = $::redis::params::slowlog_log_slower_than,
   $slowlog_max_len               = $::redis::params::slowlog_max_len,
   $stop_writes_on_bgsave_error   = $::redis::params::stop_writes_on_bgsave_error,
+  $supervised                    = $::redis::params::supervised,
   $syslog_enabled                = $::redis::params::syslog_enabled,
   $syslog_facility               = $::redis::params::syslog_facility,
+  $syslog_ident                  = $::redis::params::syslog_ident,
   $tcp_backlog                   = $::redis::params::tcp_backlog,
   $tcp_keepalive                 = $::redis::params::tcp_keepalive,
   $timeout                       = $::redis::params::timeout,
