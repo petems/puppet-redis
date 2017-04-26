@@ -1060,7 +1060,7 @@ describe 'redis', :type => :class do
           }
         }
 
-        it { should_not contain_file(config_file_orig).with(
+        it { is_expected.to contain_file(config_file_orig).without(
             'content' => /cluster-enabled/
           )
         }
