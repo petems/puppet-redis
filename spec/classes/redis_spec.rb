@@ -147,13 +147,24 @@ describe 'redis', :type => :class do
       end
 
       describe 'with parameter bind' do
-        let (:params) {
-          {
-            :bind => '_VALUE_'
+        context 'as a string' do
+          let (:params) {
+            {
+              :bind => '_VALUE_'
+            }
           }
-        }
 
-        it { is_expected.to contain_file(config_file_orig).with_content(/bind.*_VALUE_/) }
+          it { is_expected.to contain_file(config_file_orig).with_content(/bind.*_VALUE_/) }
+        end
+        context 'as an array' do
+          let (:params) {
+            {
+              :bind => ['10.0.0.1','10.0.0.2']
+            }
+          }
+
+          it { is_expected.to contain_file(config_file_orig).with_content(/bind.*10.0.0.1 10.0.0.2/) }
+        end
       end
 
       describe 'with parameter: config_dir' do
